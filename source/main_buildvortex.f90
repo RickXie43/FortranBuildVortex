@@ -11,7 +11,7 @@ Program buildvortexmain
         Character(len=300)::inputdir
         Character(len=300)::outputdir
         Character(len=100)::outputnameshort
-        Type(vortexptr), Dimension(1000000, 2)::seriesdata
+        Type(vortexptr), Dimension(2000000, 2)::seriesdata
         Integer::begini,endi
         !Read Commend Argument through String 1 to Argu inputdir
         Call GET_COMMAND_ARGUMENT(1,inputdir)

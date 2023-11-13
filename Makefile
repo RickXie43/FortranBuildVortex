@@ -5,13 +5,13 @@ buildvortex_series : iofortran.o buildvortex_module.o main_buildvortex.o
 	ifort iofortran.o buildvortex_module.o main_buildvortex.o -o buildvortex_series
 
 iofortran.o : $(SOURCE)/iofortran.f90
-	ifort -c $(SOURCE)/iofortran.f90 -o iofortran.o
+	ifort -fpp -c $(SOURCE)/iofortran.f90 -o iofortran.o
 
-buildvortex_module.o : $(SOURCE)/buildvortex_module.f90
-	ifort -fpp -c $(SOURCE)/buildvortex_module.f90 -o buildvortex_module.o
+buildvortex_module.o : $(SOURCE)/buildvortex_module.f90 $(SOURCE)/parameters.f90
+	ifort -fpp -c $(SOURCE)/buildvortex_module.f90 -o buildvortex_module.o -I.
 
 main_buildvortex.o : $(SOURCE)/main_buildvortex.f90
-	ifort -c $(SOURCE)/main_buildvortex.f90 -o main_buildvortex.o
+	ifort -fpp -c $(SOURCE)/main_buildvortex.f90 -o main_buildvortex.o -I.
 
 clean :
 	rm -f *.o *.mod buildvortex_series buildvortex_field

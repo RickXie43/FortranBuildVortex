@@ -12,6 +12,7 @@
 !  17/08/23        Rick                improve the comments of this package
 !  17/08/23        Rick                add subroutine buildvortex_vortexvelocity to calculate velocity of each vortex
 !  18/08/23        Rick                add subroutine buildvortex_writefielddata to write vortexvelocity
+!  13/11/23        Rick                use parameters.f90 to set parameters
 !
 !============================================================
 ! Usage:
@@ -21,14 +22,16 @@
 !                       Integer::outputfiletype !outputfiletype=1 to choose timeseries, 2 to choose vector field(default=1)
 !                       Call buildvortex(trim(inputdir), vortextimeseries, outputdataname=trim(outputres), outputfiletype)
 
+#include "parameters.f90"
+
 Module build_vortex
         Implicit None
         Save
         Private
         !Lc is the threshold: displacement < Lc * nearest distance
-        Real, Parameter::Lc = 0.2
+        Real, Parameter::Lc = LC_DEF
         !mininterval is the threshold of minimum vortex lifetime
-        Integer, Parameter::mininterval = 3
+        Integer, Parameter::mininterval = MININTERVAL_DEF
 
 
         Type::vortex
