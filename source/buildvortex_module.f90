@@ -33,7 +33,6 @@ Module build_vortex
         !mininterval is the threshold of minimum vortex lifetime
         Integer, Parameter::mininterval = MININTERVAL_DEF
 
-
         Type::vortex
                 Real::xc = 0.
                 Real::yc = 0.
@@ -44,6 +43,7 @@ Module build_vortex
                 Integer::direction = 0
                 Integer::time = 0
                 Real::maximumvorticity = 0.
+                Real::area = 0.
                 Type(vortex), Pointer::previous_vortex => Null()
                 Type(vortex), Pointer::next_vortex => Null()
                 Integer::beginmarker = 1
@@ -90,11 +90,11 @@ Contains
 
                 !5.Writedata to file/vortex linklist
                 ifoutputdataname: If (Present(outputdataname)) Then
-                        iffiletype: If(Present(outputfiletype)) Then
-                                filetypeselect: If(outputfiletype==1) Then
+                        iffiletype: If (Present(outputfiletype)) Then
+                                filetypeselect: If (outputfiletype == 1) Then
                                         Call buildvortex_writedatatofile(vortextimeseries, outputdataname, vortexamount)
-                                Else if (outputfiletype==2) Then
-                                        Call buildvortex_writefielddata(vortextimeseries,outputdataname,vortexamount)
+                                Else if (outputfiletype == 2) Then
+                                        Call buildvortex_writefielddata(vortextimeseries, outputdataname, vortexamount)
                                 End If filetypeselect
                         Else
                                 Call buildvortex_writedatatofile(vortextimeseries, outputdataname, vortexamount)
@@ -120,42 +120,45 @@ Contains
                 Allocate (vortexframeseries(filenumbers, 2))
 
                 inputdata: Do i = 1, filenumbers
-                Open (Unit=78, File=trim(datadir//'/'//files(i)), Status='Old', Iostat=ierror)
-                Call iofortran_filelines(trim(datadir//'/'//files(i)), lines)
-                !read the inconsiquential part of vortexdata
-                Read (78, *)
-                Read (78, *)
-                readfiles: Do j = 1, lines - 2
-                ifnotheadortail: If (j == 1) Then
-                        head_vortex => vortexframeseries(i, 1)
-                        tail_vortex => vortexframeseries(i, 1)
-                        Read (78, *) tail_vortex%xc, tail_vortex%yc,&
-                                &tail_vortex%vorticity, tail_vortex%direction,&
-                                &tail_vortex%time, tail_vortex%neardistance
-                        Nullify (tail_vortex%previous_vortex)
-                        Nullify (tail_vortex%next_vortex)
-                Else If (j /= lines - 2) Then
-                        Allocate (tail_vortex%next_vortex)
-                        head_vortex => tail_vortex
-                        tail_vortex => tail_vortex%next_vortex
-                        Read (78, *) tail_vortex%xc, tail_vortex%yc,&
-                                &tail_vortex%vorticity, tail_vortex%direction,&
-                                &tail_vortex%time, tail_vortex%neardistance
-                        tail_vortex%previous_vortex => head_vortex
-                        Nullify (tail_vortex%next_vortex)
-                Else
-                        Allocate (tail_vortex%next_vortex)
-                        head_vortex => tail_vortex
-                        tail_vortex => tail_vortex%next_vortex
-                        Read (78, *) tail_vortex%xc, tail_vortex%yc,&
-                                &tail_vortex%vorticity, tail_vortex%direction,&
-                                &tail_vortex%time, tail_vortex%neardistance
-                        tail_vortex%previous_vortex => head_vortex
-                        Nullify (tail_vortex%next_vortex)
-                        vortexframeseries(i, 2) = tail_vortex
-                End If ifnotheadortail
-                End Do readfiles
-                Close (Unit=78)
+                        Open (Unit=78, File=trim(datadir//'/'//files(i)), Status='Old', Iostat=ierror)
+                        Call iofortran_filelines(trim(datadir//'/'//files(i)), lines)
+                        !read the inconsiquential part of vortexdata
+                        Read (78, *)
+                        Read (78, *)
+                        readfiles: Do j = 1, lines - 2
+                        ifnotheadortail: If (j == 1) Then
+                                head_vortex => vortexframeseries(i, 1)
+                                tail_vortex => vortexframeseries(i, 1)
+                                Read (78, *) tail_vortex%xc, tail_vortex%yc,&
+                                        &tail_vortex%vorticity, tail_vortex%direction,&
+                                        &tail_vortex%time, tail_vortex%neardistance,&
+                                        &tail_vortex%maximumvorticity, tail_vortex%area
+                                Nullify (tail_vortex%previous_vortex)
+                                Nullify (tail_vortex%next_vortex)
+                        Else If (j /= lines - 2) Then
+                                Allocate (tail_vortex%next_vortex)
+                                head_vortex => tail_vortex
+                                tail_vortex => tail_vortex%next_vortex
+                                Read (78, *) tail_vortex%xc, tail_vortex%yc,&
+                                        &tail_vortex%vorticity, tail_vortex%direction,&
+                                        &tail_vortex%time, tail_vortex%neardistance,&
+                                        &tail_vortex%maximumvorticity, tail_vortex%area
+                                tail_vortex%previous_vortex => head_vortex
+                                Nullify (tail_vortex%next_vortex)
+                        Else
+                                Allocate (tail_vortex%next_vortex)
+                                head_vortex => tail_vortex
+                                tail_vortex => tail_vortex%next_vortex
+                                Read (78, *) tail_vortex%xc, tail_vortex%yc,&
+                                        &tail_vortex%vorticity, tail_vortex%direction,&
+                                        &tail_vortex%time, tail_vortex%neardistance,&
+                                        &tail_vortex%maximumvorticity, tail_vortex%area
+                                tail_vortex%previous_vortex => head_vortex
+                                Nullify (tail_vortex%next_vortex)
+                                vortexframeseries(i, 2) = tail_vortex
+                        End If ifnotheadortail
+                        End Do readfiles
+                        Close (Unit=78)
                 End Do inputdata
         End Subroutine buildvortex_readdata
 
@@ -167,22 +170,22 @@ Contains
                 Type(vortex)::temp
                 seriesnumber = 0
                 loopforallframe: Do i = 1, size(vortexframeseries(:, 1))
-                temp = vortexframeseries(i, 1)
-                loopinaframe: Do
-                ifnotlastinframe: If (.Not. Associated(temp%next_vortex)) Then
-                        Exit loopinaframe
-                End If ifnotlastinframe
-                ifnotbeenset: If (temp%beginmarker == 1) Then
-                        seriesnumber = seriesnumber + 1
-                        Call findfromvortex(temp, seriesnumber, vortexframeseries, vortextimeseries)
-                End If ifnotbeenset
-                temp = temp%next_vortex
-                !                                IFNAME: If (i == 67 .And. (Abs(temp%xc - 0.0109974) < 0.000001)) Then
-                !                                        Write (*, *) temp%xc
-                !                                End If IFNAME
-                End Do loopinaframe
-                Write (*, *) "Frame", i
-                Write (*, *) "Vortex", seriesnumber
+                        temp = vortexframeseries(i, 1)
+                        loopinaframe: Do
+                        ifnotlastinframe: If (.Not. Associated(temp%next_vortex)) Then
+                                Exit loopinaframe
+                        End If ifnotlastinframe
+                        ifnotbeenset: If (temp%beginmarker == 1) Then
+                                seriesnumber = seriesnumber + 1
+                                Call findfromvortex(temp, seriesnumber, vortexframeseries, vortextimeseries)
+                        End If ifnotbeenset
+                        temp = temp%next_vortex
+                        !                                IFNAME: If (i == 67 .And. (Abs(temp%xc - 0.0109974) < 0.000001)) Then
+                        !                                        Write (*, *) temp%xc
+                        !                                End If IFNAME
+                        End Do loopinaframe
+                        Write (*, *) "Frame", i
+                        Write (*, *) "Vortex", seriesnumber
                 End Do loopforallframe
         End Subroutine buildvortex_build
 
@@ -237,15 +240,15 @@ Contains
                 near_temp = vortexframeseries(vortexvalue%time + 1, 1)
                 nearestdistance = 100000
                 findnesrestnextvortex: Do
-                temp = temp%next_vortex
-                distance = ((temp%xc - vortexvalue%xc)**2 + (temp%yc - vortexvalue%yc)**2)**0.5
-                nearthan: If (distance < nearestdistance) Then
-                        nearestdistance = distance
-                        near_temp = temp
-                End If nearthan
-                ifending: If (.Not. Associated(temp%next_vortex)) Then
-                        Exit findnesrestnextvortex
-                End If ifending
+                        temp = temp%next_vortex
+                        distance = ((temp%xc - vortexvalue%xc)**2 + (temp%yc - vortexvalue%yc)**2)**0.5
+                        nearthan: If (distance < nearestdistance) Then
+                                nearestdistance = distance
+                                near_temp = temp
+                        End If nearthan
+                        ifending: If (.Not. Associated(temp%next_vortex)) Then
+                                Exit findnesrestnextvortex
+                        End If ifending
                 End Do findnesrestnextvortex
 
                 !                IFNAME: If (vortexvalue%time == 67 .And. (Abs(vortexvalue%xc - 0.0109974) < 0.000001)) Then
@@ -301,24 +304,24 @@ Contains
         End Subroutine buildvortex_deletevortex
 
         !Calculate vortex velocitydata
-        Subroutine buildvortex_vortexvelocity (vortextimeseries, vortexamount)
+        Subroutine buildvortex_vortexvelocity(vortextimeseries, vortexamount)
                 Implicit None
                 Type(vortexptr), Dimension(:, :), Intent(In)::vortextimeseries
                 Integer, Intent(In)::vortexamount
                 Type(vortex), Pointer::temp => Null()
                 Integer::i
-                loop1: Do i=1,vortexamount
-                temp=> vortextimeseries(i,1)%p
-                temp=> temp%next_vortex
-                loopinseries: Do
-                ifnotlastvortexi: If( Associated(temp%next_vortex)) Then
-                        temp%velocity_x=(temp%next_vortex%xc-temp%previous_vortex%xc)/2
-                        temp%velocity_y=(temp%next_vortex%yc-temp%previous_vortex%yc)/2
-                Else
-                        Exit loopinseries
-                End If ifnotlastvortexi
-                temp=> temp%next_vortex
-                End Do loopinseries
+                loop1: Do i = 1, vortexamount
+                        temp => vortextimeseries(i, 1)%p
+                        temp => temp%next_vortex
+                        loopinseries: Do
+                        ifnotlastvortexi: If (Associated(temp%next_vortex)) Then
+                                temp%velocity_x = (temp%next_vortex%xc - temp%previous_vortex%xc)/2
+                                temp%velocity_y = (temp%next_vortex%yc - temp%previous_vortex%yc)/2
+                        Else
+                                Exit loopinseries
+                        End If ifnotlastvortexi
+                        temp => temp%next_vortex
+                        End Do loopinseries
                 End Do loop1
         End Subroutine buildvortex_vortexvelocity
 
@@ -332,27 +335,29 @@ Contains
                 Integer::ierror, i, j
                 Open (Unit=43, File=outputdataname, Status='New', Iostat=ierror)
                 writevortex: Do i = 1, vortexamount
-                Write (43, *) "Vortex No.", i
-                !write vortex begin at vortextimeseries(i, 1)%p
-                temp => vortextimeseries(i, 1)%p
-                writeavortexserie: Do
-                Write (43, *) temp%xc, temp%yc, temp%vorticity, temp%time
-                iflastterm: If (.Not. Associated(temp%next_vortex)) Then
-                        Exit writeavortexserie
-                End If iflastterm
-                temp => temp%next_vortex
-                End Do writeavortexserie
+                        Write (43, *) "Vortex No.", i
+                        !write vortex begin at vortextimeseries(i, 1)%p
+                        temp => vortextimeseries(i, 1)%p
+                        writeavortexserie: Do
+                                Write (43, "(2F14.7,F20.8,I7,F14.7,F20.8,F20.10)") &
+                                        &temp%xc, temp%yc, temp%vorticity, temp%time,&
+                                        &temp%neardistance, temp%maximumvorticity, temp%area
+                                iflastterm: If (.Not. Associated(temp%next_vortex)) Then
+                                        Exit writeavortexserie
+                                End If iflastterm
+                                temp => temp%next_vortex
+                        End Do writeavortexserie
                 End Do writevortex
                 Close (Unit=43)
         End Subroutine buildvortex_writedatatofile
 
         !Subroutine to calculate vortex velocitydata and write to dir=outputdataname
-        Subroutine buildvortex_writefielddata (vortextimeseries,outputdataname,vortexamount)
+        Subroutine buildvortex_writefielddata(vortextimeseries, outputdataname, vortexamount)
                 Implicit None
                 Type(vortexptr), Dimension(:, :), Intent(In)::vortextimeseries
                 Character(len=*), Intent(In)::outputdataname
                 Integer, Intent(In)::vortexamount
-                Integer::i,frameamount,ierror,j
+                Integer::i, frameamount, ierror, j
                 Type(vortex), Pointer::temp => Null()
                 Character(len=5)::middlestring
                 Character(len=80)::fordataname
@@ -360,49 +365,50 @@ Contains
                 Call system('mkdir '//outputdataname)
                 !2.loop for all frame to record vortexdata
                 !findvortexframenumber
-                frameamount=0
-                findframeamount: Do i=1,Size(vortextimeseries(:,1))
-                temp=>vortextimeseries(i,1)%p
-                lololo: Do
-                ifexitlololo: If( .Not. Associated(temp)) Then
-                        Exit lololo
-                Else
-                        iflargeramount: If(temp%time>frameamount) Then
-                                frameamount=temp%time
-                        End If iflargeramount
-                        temp=>temp%next_vortex
-                End If ifexitlololo
-                End Do lololo
+                frameamount = 0
+                findframeamount: Do i = 1, Size(vortextimeseries(:, 1))
+                        temp => vortextimeseries(i, 1)%p
+                        lololo: Do
+                        ifexitlololo: If (.Not. Associated(temp)) Then
+                                Exit lololo
+                        Else
+                                iflargeramount: If (temp%time > frameamount) Then
+                                        frameamount = temp%time
+                                End If iflargeramount
+                                temp => temp%next_vortex
+                        End If ifexitlololo
+                        End Do lololo
                 End Do findframeamount
 
-                fordifferentfile: Do i=1,frameamount
-                Write (middlestring, 100) i
-                100     Format(I5.5)
-                fordataname = 'VortexFieldData_'//'B'//middlestring//'.txt'
-                Open(Unit=24, File=outputdataname//'/'//trim(fordataname),Status='New',Iostat=ierror)
-                Write (24, "(A27,100a)") 'The data of Vortex of file ', trim(fordataname)
-                Write (24, "(150a)") 'xc(m) yc(m) vorticity(m*s) direction time(frame) nearest distance(m) maximumvorticity(1/s) &
-                        velocity_x(m/frame) velocity_y(m/frame)'
-                !3.for each frame, loop for all series and find correspond vortex
-                aaallseries: Do j=1,vortexamount
-                temp=>vortextimeseries(j,1)%p
-                loopforallseries1: Do
-                ifnotlastvortex2: If( .Not. Associated(temp)) Then
-                        Exit loopforallseries1
-                Else
-                        ifisintheframetime: If(i==temp%time) Then
-                                Write (24, "(2F14.7,F20.8,2I7,F14.7,3F20.8)") temp%xc, temp%yc,&
-                                        &temp%vorticity, temp%direction,&
-                                        &temp%time, temp%neardistance,&
-                                        &temp%maximumvorticity, temp%velocity_x,temp%velocity_y
-                                Exit loopforallseries1
-                        End If ifisintheframetime
-                        temp=>temp%next_vortex
-                End If ifnotlastvortex2
-                End Do loopforallseries1
-                End Do aaallseries
+                fordifferentfile: Do i = 1, frameamount
+                        Write (middlestring, 100) i
+100                     Format(I5.5)
+                        fordataname = 'VortexFieldData_'//'B'//middlestring//'.txt'
+                        Open (Unit=24, File=outputdataname//'/'//trim(fordataname), Status='New', Iostat=ierror)
+                        Write (24, "(A27,100a)") 'The data of Vortex of file ', trim(fordataname)
+                        Write (24, "(150a)") 'xc(m) yc(m) vorticity(m*s) direction time(frame) nearest distance(m) maximumvorticity(1/s) &
+        &                        velocity_x(m/frame) velocity_y(m/frame)'
+                        !3.for each frame, loop for all series and find correspond vortex
+                        aaallseries: Do j = 1, vortexamount
+                                temp => vortextimeseries(j, 1)%p
+                                loopforallseries1: Do
+                                ifnotlastvortex2: If (.Not. Associated(temp)) Then
+                                        Exit loopforallseries1
+                                Else
+                                        ifisintheframetime: If (i == temp%time) Then
+                                                Write (24, "(2F14.7,F20.8,2I7,F14.7,3F20.8, F20.10)") temp%xc, temp%yc,&
+                                                        &temp%vorticity, temp%direction,&
+                                                        &temp%time, temp%neardistance,&
+                                                        &temp%maximumvorticity, temp%velocity_x, temp%velocity_y,&
+                                                        &temp%area
+                                                Exit loopforallseries1
+                                        End If ifisintheframetime
+                                        temp => temp%next_vortex
+                                End If ifnotlastvortex2
+                                End Do loopforallseries1
+                        End Do aaallseries
 
-                Close(Unit=24)
+                        Close (Unit=24)
                 End Do fordifferentfile
         End Subroutine buildvortex_writefielddata
 End Module build_vortex
