@@ -7,3 +7,19 @@ make
 make clean
 make field
 ./buildvortex_field $INPUTDIR $OUTPUTDIR
+
+#if you want to batch processing a series of INPUTDIR, use this:
+#dir processing
+INPUTDIR=~/dircontainsmanyvortexdatadir
+OUTPUTDIR=~/outputdiryouwant
+SUBDIRS=("$INPUTDIR"/*)
+for dir in "${SUBDIRS[@]}";
+do
+	if [[ -d "$dir" ]]; then
+		echo "Processing $dir"
+		make clean
+		make
+		./buildvortex_series "$dir" $OUTPUTDIR
+		echo "Finished processing $dir."
+	fi
+done
