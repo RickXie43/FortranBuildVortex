@@ -13,6 +13,8 @@
 !  17/08/23        Rick                add subroutine buildvortex_vortexvelocity to calculate velocity of each vortex
 !  18/08/23        Rick                add subroutine buildvortex_writefielddata to write vortexvelocity
 !  13/11/23        Rick                use parameters.f90 to set parameters
+!  02/06/24        Rick                use extrapolation to set the velocity of first vortex and last vortex in a serie, the
+!  minlength should larger than 4
 !
 !============================================================
 ! Usage:
@@ -313,11 +315,21 @@ Contains
                 loop1: Do i = 1, vortexamount
                         temp => vortextimeseries(i, 1)%p
                         temp => temp%next_vortex
+                        !set the first vortex using extrapolation
+                        temp%previous_vortex%velocity_x=2*((temp%next_vortex%xc - temp%previous_vortex%xc)/2)&
+                                -(temp%next_vortex%next_vortex%xc - temp%xc)/2
+                        temp%previous_vortex%velocity_y=2*((temp%next_vortex%yc - temp%previous_vortex%yc)/2)&
+                                -(temp%next_vortex%next_vortex%yc - temp%yc)/2
                         loopinseries: Do
                         ifnotlastvortexi: If (Associated(temp%next_vortex)) Then
                                 temp%velocity_x = (temp%next_vortex%xc - temp%previous_vortex%xc)/2
                                 temp%velocity_y = (temp%next_vortex%yc - temp%previous_vortex%yc)/2
                         Else
+                                temp%velocity_x = (2*(temp%xc - temp%previous_vortex%previous_vortex%xc)/2)&
+                                        -(temp%previous_vortex%xc - temp%previous_vortex%previous_vortex%previous_vortex%xc)/2
+                                temp%velocity_y = (2*(temp%yc - temp%previous_vortex%previous_vortex%yc)/2)&
+                                        -(temp%previous_vortex%yc - temp%previous_vortex%previous_vortex%previous_vortex%yc)/2
+                                !set the last vortex using extrapolation
                                 Exit loopinseries
                         End If ifnotlastvortexi
                         temp => temp%next_vortex
@@ -387,7 +399,7 @@ Contains
                         Open (Unit=24, File=outputdataname//'/'//trim(fordataname), Status='New', Iostat=ierror)
                         Write (24, "(A27,100a)") 'The data of Vortex of file ', trim(fordataname)
                         Write (24, "(150a)") 'xc(m) yc(m) vorticity(m*s) direction time(frame) nearest distance(m) maximumvorticity(1/s) &
-        &                        velocity_x(m/frame) velocity_y(m/frame)'
+        &                        velocity_x(m/frame) velocity_y(m/frame) area(m^2)'
                         !3.for each frame, loop for all series and find correspond vortex
                         aaallseries: Do j = 1, vortexamount
                                 temp => vortextimeseries(j, 1)%p
